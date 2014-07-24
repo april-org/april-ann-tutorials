@@ -20,7 +20,8 @@ local hidden1f = "tanh"
 local hidden2  = 128
 local hidden2f = "tanh"
 ----------------------------------------------------------
-local corpusdir = "./"
+ -- data has to be in the same the path where the script is located
+local datadir = arg[0]:get_path()
 local train_filename = "train-images-idx3-ubyte.mat"
 local test_filename  = "t10k-images-idx3-ubyte.mat"
 
@@ -31,14 +32,14 @@ end
 
 -- loads the training and test matrices
 print("# Lodaing trainig data...")
-local training_samples = matrix.fromFilename(corpusdir..train_filename)
+local training_samples = matrix.fromFilename(datadir..train_filename)
 print("# Lodaing test data...")
-local test_samples     = matrix.fromFilename(corpusdir..test_filename)
+local test_samples     = matrix.fromFilename(datadir..test_filename)
 
 -- load training and test labels
-local aux = load_labels(corpusdir.."train-labels-idx1-ubyte.txt")
+local aux = load_labels(datadir.."train-labels-idx1-ubyte.txt")
 local training_labels = matrix(#aux, aux)
-local aux = load_labels(corpusdir.."t10k-labels-idx1-ubyte.txt")
+local aux = load_labels(datadir.."t10k-labels-idx1-ubyte.txt")
 local test_labels = matrix(#aux, aux)
 
 -- the output is an indexed dataset over a identity which allows to produce a
@@ -107,6 +108,14 @@ local train_data = {
 local validation_data = {
   input_dataset  = validation_input,
   output_dataset = validation_output,
+  loss = ann.loss.zero_one(), -- computes the classification error
+}
+
+-- auxiliary table with the fields necessary for trainer:validate_dataset method
+local test_data = {
+  input_dataset  = test_input,
+  output_dataset = test_output,
+  loss = ann.loss.zero_one(), -- computes the classification error
 }
 
 print("# Training size:   ", train_input:numPatterns())
@@ -213,7 +222,7 @@ local train_func = trainable.train_holdout_validation{
   stopping_criterion = stopping_criterion,
 }
 
-print("# Epoch Train-CE Val-CE best_epoch best_val_error \t time/epoch norm2")
+print("# Epoch Train-CE Val-ER best_epoch best_val_error \t time/epoch norm2")
 local cronometro = util.stopwatch()
 cronometro:go()
 
@@ -231,16 +240,8 @@ end) do
   -- when an epoch is the best, show at screen the validation and test zero-one
   -- errors (classification errors) which is (100 - accuracy)
   if train_func:is_best() then
-    local val_rel_error = trainer:validate_dataset{
-      input_dataset = validation_input,
-      output_dataset = validation_output,
-      loss = ann.loss.zero_one(),
-    }
-    local tst_rel_error = trainer:validate_dataset{
-      input_dataset = test_input,
-      output_dataset = test_output,
-      loss = ann.loss.zero_one(),
-    }
+    local val_rel_error = train_func:get_state_table().validation_error
+    local tst_rel_error = trainer:validate_dataset(test_data)
     printf("# CLASS %.4f %%  %d\n",
 	   val_rel_error*100, val_rel_error*validation_input:numPatterns())
     printf("# CLASS %.4f %%  %d\n",
@@ -264,6 +265,7 @@ end) do
 end
 cronometro:stop()
 local cpu,wall = cronometro:read()
+local epochs = train_func:get_state_table().current_epoch
 printf("# Wall total time: %.3f    per epoch: %.3f\n", wall, wall/epochs)
 printf("# CPU  total time: %.3f    per epoch: %.3f\n", cpu, cpu/epochs)
 
