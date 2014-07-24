@@ -1,4 +1,4 @@
-april-ann-tutorials
+APRIL-ANN tutorials
 ===================
 
-Tutorials for APRIL-ANN toolkit.
+Tutorials for APRIL-ANN toolkit. See the wiki pages.
