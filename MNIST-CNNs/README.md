@@ -35,6 +35,10 @@ Description
 Execution example
 -----------------
 
+The execution of `train.lua` script will look as the following example. Note
+that the APRIL-ANN disclaimer is only shown when the standard output is a
+terminal. If you redirect the output to a file the disclaimer won't be shown.
+
 ```
 $ april-ann train.lua
 APRIL-ANN v0.3.1 COMMIT 1689  Copyright (C) 2012-2014 DSIC-UPV, CEU-UCH
@@ -43,30 +47,39 @@ This is free software, and you are welcome to redistribute it
 under certain conditions; see LICENSE.txt for details.
 # Lodaing trainig data...
 # Lodaing test data...
-# Training size:   	50000
-# Validation size: 	10000
+# Training size:    50000
+# Validation size:  10000
 # Generating MLP
 # Epoch Train-CE Val-ER best_epoch best_val_error    time/epoch    norm2
 # CLASS 71.6800 %  7167
 # CLASS 70.2700 %  7027
-    1 2.281600 0.716800        1 0.716800 	 cpu: 22.44 wall: 6.17 :: norm2 w=   1.4301  b=   0.1147
+    1 2.281600 0.716800        1 0.716800    cpu: 22.44 wall: 6.17 :: norm2 w=   1.4301  b=   0.1147
 # CLASS 52.9100 %  5291
 # CLASS 51.9700 %  5196
-    2 2.180531 0.529100        2 0.529100 	 cpu: 22.15 wall: 5.95 :: norm2 w=   1.4457  b=   0.1582
+    2 2.180531 0.529100        2 0.529100    cpu: 22.15 wall: 5.95 :: norm2 w=   1.4457  b=   0.1582
 # CLASS 44.1500 %  4415
 # CLASS 43.9800 %  4397
-    3 1.894892 0.441500        3 0.441500 	 cpu: 22.17 wall: 5.93 :: norm2 w=   1.6594  b=   0.2886
+    3 1.894892 0.441500        3 0.441500    cpu: 22.17 wall: 5.93 :: norm2 w=   1.6594  b=   0.2886
 # CLASS 28.6200 %  2861
 # CLASS 28.8600 %  2885
-    4 1.401662 0.286200        4 0.286200 	 cpu: 22.02 wall: 5.85 :: norm2 w=   1.8045  b=   0.4935
+    4 1.401662 0.286200        4 0.286200    cpu: 22.02 wall: 5.85 :: norm2 w=   1.8045  b=   0.4935
 # CLASS 18.4600 %  1845
 # CLASS 19.9700 %  1996
-    5 0.974552 0.184600        5 0.184600 	 cpu: 21.88 wall: 5.79 :: norm2 w=   1.8917  b=   0.6344
+    5 0.974552 0.184600        5 0.184600    cpu: 21.88 wall: 5.79 :: norm2 w=   1.8917  b=   0.6344
 # CLASS 16.4700 %  1647
 # CLASS 17.5100 %  1750
-    6 0.716332 0.164700        6 0.164700 	 cpu: 21.72 wall: 5.73 :: norm2 w=   1.9744  b=   0.7432
+    6 0.716332 0.164700        6 0.164700    cpu: 21.72 wall: 5.73 :: norm2 w=   1.9744  b=   0.7432
 # CLASS 14.9800 %  1498
 # CLASS 15.5300 %  1553
-    7 0.614467 0.149800        7 0.149800 	 cpu: 21.68 wall: 5.71 :: norm2 w=   2.0084  b=   0.7744
-    ...
+    7 0.614467 0.149800        7 0.149800    cpu: 21.68 wall: 5.71 :: norm2 w=   2.0084  b=   0.7744
+  ...    ...      ...
+ 1398 0.019286 0.011100     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0896  b=   1.3822
+ 1399 0.021655 0.011700     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0888  b=   1.3809
+ 1400 0.018327 0.011600     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0901  b=   1.3817
+ 1401 0.014408 0.011700     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0898  b=   1.3805
+ 1402 0.021803 0.011500     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0877  b=   1.3828
+# Wall total time: 4617.449    per epoch: 3.293
+# CPU  total time: 17465.441    per epoch: 12.458
+# CLASS 1.0500 %  104
+# CLASS 1.0200 %  102
 ```
