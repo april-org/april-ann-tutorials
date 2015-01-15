@@ -16,26 +16,27 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+-- bunch_size controls the mini-batch for weight updates
 local bunch_size    = 64
-local learning_rate = 0.0524
-local momentum      = 0.0157
-local weight_decay  = 4.7e-5
-local replacement   = 640
-local lr_decay      = 0.999
+local learning_rate = 0.06
+local momentum      = 0.01
+local weight_decay  = 0.0001
+-- replacement controls how many samples will be shown in one epoch
+local replacement   = 64
 ----------------------------------------------------------
 -- CONVOLUTION CONFIGURATION
 local ishape   = {1, 28, 28}
 local conv1    = {1, 5, 5}
-local nconv1   = 7
+local nconv1   = 8
 local conv1f   = "tanh"
 local maxp1    = {1, 2, 2}
-local conv2    = {nconv1, 3, 3}
-local nconv2   = 34
+local conv2    = {nconv1, 5, 5}
+local nconv2   = 16
 local conv2f   = "tanh"
 local maxp2    = {1, 2, 2}
 local hidden1  = 64
 local hidden1f = "tanh"
-local hidden2  = 128
+local hidden2  = 64
 local hidden2f = "tanh"
 ----------------------------------------------------------
  -- data has to be in the same the path where the script is located
@@ -45,7 +46,7 @@ local test_filename  = "t10k-images-idx3-ubyte.mat"
 
 local function load_labels(filename)
   -- NOTE: add(1) because indices starts at 0, and in Lua they had to start at 1
-  return iterator(io.lines(filename)):map(tonumber):map(math.add(1)):table()
+  return iterator(io.lines(filename)):map(tonumber):map(bind(math.add, 1)):table()
 end
 
 -- loads the training and test matrices
@@ -126,14 +127,15 @@ local train_data = {
 local validation_data = {
   input_dataset  = validation_input,
   output_dataset = validation_output,
-  loss = ann.loss.zero_one(), -- computes the classification error
+  loss = ann.loss.zero_one(), -- force computation of classification error
+                              -- instead of the loss given to the trainer
 }
 
 -- auxiliary table with the fields necessary for trainer:validate_dataset method
 local test_data = {
   input_dataset  = test_input,
   output_dataset = test_output,
-  loss = ann.loss.zero_one(), -- computes the classification error
+  loss = ann.loss.zero_one(), -- forces computation of classification error
 }
 
 print("# Training size:   ", train_input:numPatterns())
@@ -172,7 +174,7 @@ local thenet = ann.components.stack{ name="stack" }:
 -- we compute here the output size of the convolution which will be the input
 -- size of the first fully connected layer
 local conv_out_size = thenet:precompute_output_size{ 28*28 }
-local conv_out_size = iterator(ipairs(conv_out_size)):select(2):reduce(math.mul(),1)
+local conv_out_size = iterator(ipairs(conv_out_size)):select(2):reduce(math.mul,1)
 -- first fully connected layer
 thenet:push( ann.components.hyperplane{ input=conv_out_size, output=hidden1,
                                         name="hyp-1",
@@ -222,8 +224,8 @@ trainer:set_layerwise_option("B.", "weight_decay", 0)
 trainer:randomize_weights{
   name_match = "W.*",
   random     =  rnd1,
-  inf        = -2.4,
-  sup        =  2.4,
+  inf        = -math.sqrt(6),
+  sup        =  math.sqrt(6),
   use_fanin  = true,
   use_fanout = true,
 }
@@ -231,8 +233,7 @@ trainer:randomize_weights{
 -- initializes all biases to zero
 for _,B in trainer:iterate_weights("B.") do B:zeros() end
 
--- the stopping criterion is 400 epochs without improvement in validation cross
--- entropy
+-- the stopping criterion is 400 epochs without improvement in validation loss
 local stopping_criterion = trainable.stopping_criteria.make_max_epochs_wo_imp_absolute(400)
 local train_func = trainable.train_holdout_validation{
   min_epochs = 100,
@@ -260,9 +261,9 @@ end) do
   if train_func:is_best() then
     local val_rel_error = train_func:get_state_table().validation_error
     local tst_rel_error = trainer:validate_dataset(test_data)
-    printf("# CLASS %.4f %%  %d\n",
+    printf("# VAL  CLASS ERROR %.4f %%  %d\n",
 	   val_rel_error*100, val_rel_error*validation_input:numPatterns())
-    printf("# CLASS %.4f %%  %d\n",
+    printf("# TEST CLASS ERROR %.4f %%  %d\n",
 	   tst_rel_error*100, tst_rel_error*test_input:numPatterns())
     -- save the input filters (W1 weight matrix)
     local img = ann.connections.input_filters_image(trainer:weights("W1"),
@@ -276,10 +277,6 @@ end) do
 	 trainer:norm2(".*W.*"),
 	 trainer:norm2(".*B.*"))
   io.stdout:flush()
-  if lr_decay < 1.0 or lr_decay > 1.0 then
-    local lr = trainer:get_option("learning_rate")
-    trainer:set_option("learning_rate", lr*lr_decay)
-  end
 end
 cronometro:stop()
 local cpu,wall = cronometro:read()
@@ -299,7 +296,7 @@ local tst_rel_error = best:validate_dataset{
   output_dataset = test_output,
   loss = ann.loss.zero_one(),
 }
-printf("# CLASS %.4f %%  %d\n",
+printf("# VAL  CLASS ERROR %.4f %%  %d\n",
        val_rel_error*100, val_rel_error*validation_input:numPatterns())
-printf("# CLASS %.4f %%  %d\n",
+printf("# TEST CLASS ERROR %.4f %%  %d\n",
        tst_rel_error*100, tst_rel_error*test_input:numPatterns())

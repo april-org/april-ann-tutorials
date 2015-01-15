@@ -17,12 +17,8 @@
 
 int main(int argc, char **argv)
 {
-  FILE *f = fopen(argv[1], "r");
+  FILE *f = stdin;
   unsigned int magic, numitems, numrows, numcols;
-  if (f == 0) {
-    perror("JARL!");
-    return 1;
-  }
   unsigned char w[4];
   fread(w, sizeof(unsigned char), 4, f);
   fread(w, sizeof(unsigned char), 4, f);

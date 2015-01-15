@@ -1,6 +1,16 @@
 Convolutional Neural Networks - MNIST
 =====================================
 
+You can download and execute this tutorial executing:
+
+```
+$ ./execute.sh
+```
+
+It will perform download of APRIL-ANN (if necessary), download of MNIST data to
+`tmp/mnist` temporary directory (if necessary), and execution of APRIL-ANN with
+script `train.lua`.
+
 Data conversion to APRIL-ANN format
 -----------------------------------
 
@@ -41,37 +51,35 @@ terminal. If you redirect the output to a file the disclaimer won't be shown.
 
 ```
 $ april-ann train.lua
-APRIL-ANN v0.3.1 COMMIT 1689  Copyright (C) 2012-2014 DSIC-UPV, CEU-UCH
+APRIL-ANN v0.4.1 COMMIT 2360  Copyright (C) 2012-2015 DSIC-UPV, CEU-UCH
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
 This is free software, and you are welcome to redistribute it
 under certain conditions; see LICENSE.txt for details.
 # Lodaing trainig data...
 # Lodaing test data...
-# Training size:    50000
-# Validation size:  10000
+# Training size:   	50000
+# Validation size: 	10000
 # Generating MLP
-# Epoch Train-CE Val-ER best_epoch best_val_error    time/epoch    norm2
-# CLASS 71.6800 %  7167
-# CLASS 70.2700 %  7027
-    1 2.281600 0.716800        1 0.716800    cpu: 22.44 wall: 6.17 :: norm2 w=   1.4301  b=   0.1147
-# CLASS 52.9100 %  5291
-# CLASS 51.9700 %  5196
-    2 2.180531 0.529100        2 0.529100    cpu: 22.15 wall: 5.95 :: norm2 w=   1.4457  b=   0.1582
-# CLASS 44.1500 %  4415
-# CLASS 43.9800 %  4397
-    3 1.894892 0.441500        3 0.441500    cpu: 22.17 wall: 5.93 :: norm2 w=   1.6594  b=   0.2886
-# CLASS 28.6200 %  2861
-# CLASS 28.8600 %  2885
-    4 1.401662 0.286200        4 0.286200    cpu: 22.02 wall: 5.85 :: norm2 w=   1.8045  b=   0.4935
-# CLASS 18.4600 %  1845
-# CLASS 19.9700 %  1996
-    5 0.974552 0.184600        5 0.184600    cpu: 21.88 wall: 5.79 :: norm2 w=   1.8917  b=   0.6344
-# CLASS 16.4700 %  1647
-# CLASS 17.5100 %  1750
-    6 0.716332 0.164700        6 0.164700    cpu: 21.72 wall: 5.73 :: norm2 w=   1.9744  b=   0.7432
-# CLASS 14.9800 %  1498
-# CLASS 15.5300 %  1553
-    7 0.614467 0.149800        7 0.149800    cpu: 21.68 wall: 5.71 :: norm2 w=   2.0084  b=   0.7744
+# Epoch Train-CE Val-ER best_epoch best_val_error 	 time/epoch norm2
+# VAL  CLASS ERROR 41.5600 %  4156
+# TEST CLASS ERROR 42.7700 %  4277
+    1 2.195050 0.415600        1 0.415600 	 cpu: 58.10 wall: 19.14 :: norm2 w=   1.4427  b=   0.0510
+# VAL  CLASS ERROR 15.1000 %  1509
+# TEST CLASS ERROR 15.8900 %  1588
+    2 0.804662 0.151000        2 0.151000 	 cpu: 57.60 wall: 19.02 :: norm2 w=   1.4510  b=   0.0578
+    3 0.556816 0.163500        2 0.151000 	 cpu: 48.60 wall: 16.05 :: norm2 w=   1.4722  b=   0.0633
+# VAL  CLASS ERROR 10.4100 %  1040
+# TEST CLASS ERROR 11.7500 %  1174
+    4 0.445993 0.104100        4 0.104100 	 cpu: 51.11 wall: 16.89 :: norm2 w=   1.4962  b=   0.0688
+# VAL  CLASS ERROR 9.0000 %  900
+# TEST CLASS ERROR 9.8900 %  988
+    5 0.308289 0.090000        5 0.090000 	 cpu: 52.52 wall: 17.37 :: norm2 w=   1.5174  b=   0.0711
+# VAL  CLASS ERROR 8.7000 %  869
+# TEST CLASS ERROR 9.5700 %  957
+    6 0.283777 0.087000        6 0.087000 	 cpu: 53.49 wall: 17.70 :: norm2 w=   1.5429  b=   0.0760
+# VAL  CLASS ERROR 5.9900 %  599
+# TEST CLASS ERROR 6.3300 %  632
+    7 0.276292 0.059900        7 0.059900 	 cpu: 54.26 wall: 17.99 :: norm2 w=   1.5622  b=   0.0768
   ...    ...      ...
  1398 0.019286 0.011100     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0896  b=   1.3822
  1399 0.021655 0.011700     1002 0.010500    cpu: 12.46 wall: 3.29 :: norm2 w=   3.0888  b=   1.3809
