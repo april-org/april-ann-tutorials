@@ -8,10 +8,6 @@ test_images=t10k-images-idx3-ubyte.gz
 test_labels=t10k-labels-idx1-ubyte.gz
 data_path=$tmp_path/mnist
 
-RED='\033[0;31m'
-YELLOW='\1;33[0;31m'
-NC='\033[0m' # No Color
-
 . $script_path/../configure.sh $tmp_path
 
 check_command ln
