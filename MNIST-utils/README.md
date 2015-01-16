@@ -1,6 +1,12 @@
 MNIST utilities
 ===============
 
+You can download and convert MNIST data to APRIL-ANN matrix format by executing:
+
+```
+$ ./execute.sh
+```
+
 Data conversion to APRIL-ANN format
 -----------------------------------
 
