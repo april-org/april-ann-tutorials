@@ -46,37 +46,41 @@ download()
     fi
 }
 
-if [ ! $(which april-ann) ]; then
+if [[ -z $APRIL_ANN_TUTORIALS_CONFIGURED ]]; then
 
-    cd $tmp_path
+    if [ ! $(which april-ann) ]; then
 
-    if [[ ! -e $VERSION ]]; then
-        git clone git@github.com:pakozm/april-ann.git $VERSION
-    fi
+        cd $tmp_path
 
-    cd $VERSION
-    warning "You would need to be sudoer to install all APRIL-ANN dependencies"
-    ./DEPENDENCIES-INSTALLER.sh || exit 1
-    . configure.sh || exit 1
-
-    system=$(uname)
-    if [[ $system == "Linux" ]]; then
-        make release-atlas || exit 1
-    elif [[ $system == "Darwin" ]]; then
-        if [ $(which port) ]; then
-            make release-macports || exit 1
-        elif [ $(which brew) ]; then
-            make release-homebrew
-        else
-            error "Needs macports or homebrew installed"
+        if [[ ! -e $VERSION ]]; then
+            git clone git@github.com:pakozm/april-ann.git $VERSION
         fi
+
+        cd $VERSION
+        warning "You would need to be sudoer to install all APRIL-ANN dependencies"
+        ./DEPENDENCIES-INSTALLER.sh || exit 1
+        . configure.sh || exit 1
+
+        system=$(uname)
+        if [[ $system == "Linux" ]]; then
+            make release-atlas || exit 1
+        elif [[ $system == "Darwin" ]]; then
+            if [ $(which port) ]; then
+                make release-macports || exit 1
+            elif [ $(which brew) ]; then
+                make release-homebrew
+            else
+                error "Needs macports or homebrew installed"
+            fi
+        else
+            error "Not supported system: $system"
+            exit 1
+        fi
+
+        cd $old_path
+
     else
-        error "Not supported system: $system"
-        exit 1
+        warning "april-ann executable in PATH, skipping installation"
     fi
-
-    cd $old_path
-
-else
-    warning "april-ann executable in PATH, skipping installation"
+    export APRIL_ANN_TUTORIALS_CONFIGURED=1
 fi
