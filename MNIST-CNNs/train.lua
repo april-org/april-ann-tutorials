@@ -17,27 +17,23 @@
 ]]
 
 -- bunch_size controls the mini-batch for weight updates
-local bunch_size    = 64
-local learning_rate = 0.06
-local momentum      = 0.01
+local bunch_size    = 128
 local weight_decay  = 0.0001
 -- replacement controls how many samples will be shown in one epoch
-local replacement   = 64
+local replacement   = 256
 ----------------------------------------------------------
 -- CONVOLUTION CONFIGURATION
 local ishape   = {1, 28, 28}
 local conv1    = {1, 5, 5}
 local nconv1   = 8
-local conv1f   = "tanh"
+local conv1f   = "relu"
 local maxp1    = {1, 2, 2}
 local conv2    = {nconv1, 5, 5}
 local nconv2   = 16
-local conv2f   = "tanh"
+local conv2f   = "relu"
 local maxp2    = {1, 2, 2}
-local hidden1  = 64
-local hidden1f = "tanh"
-local hidden2  = 64
-local hidden2f = "tanh"
+local hidden1  = 128
+local hidden1f = "relu"
 ----------------------------------------------------------
  -- data has to be in the same the path where the script is located
 local datadir = arg[0]:get_path()
@@ -184,37 +180,33 @@ thenet:push( ann.components.hyperplane{ input=conv_out_size, output=hidden1,
                                         dot_product_weights="W3" } ):
   -- activation function
   push( ann.components.actf[hidden1f]{ name="actf-3" } ):
-  -- second fully connected layer
-  push( ann.components.hyperplane{ output=hidden2,
+  -- dropout to avoid overfitting
+  push( ann.components.dropout{ name="dropout", prob=0.5, random=rnd3 } ):
+  -- output layer
+  push( ann.components.hyperplane{ input=hidden1, output= 10,
                                    name="hyp-2",
                                    bias_name="B4",
                                    dot_product_name="W4",
                                    bias_weights="B4",
                                    dot_product_weights="W4" } ):
-  -- activation function
-  push( ann.components.actf[hidden1f]{ name="actf-4" } ):
-  -- output layer
-  push( ann.components.hyperplane{ input=hidden2, output= 10,
-                                   name="hyp-3",
-                                   bias_name="B5",
-                                   dot_product_name="W5",
-                                   bias_weights="B5",
-                                   dot_product_weights="W5" } ):
   -- output activation function
-  push( ann.components.actf.log_softmax{ name="actf-5" } )
+  push( ann.components.actf.log_softmax{ name="actf-4" } )
 
 -- the trainer knows how ANN components, loss function and optimizer are tightly
 -- together
 local trainer = trainable.supervised_trainer(thenet,
+                                             -- cross entropy for multi-class
+                                             -- tasks
                                              ann.loss.multi_class_cross_entropy(),
-                                             bunch_size)
+                                             bunch_size,
+                                             -- adadelta is a powerful
+                                             -- optimization algorithm
+                                             ann.optimizer.adadelta())
 -- generates the network and allocates memory for all weight matrices
 trainer:build()
 
 -- learning parameters are weight-related, via optimizer (trainer has a wrapper
 -- and knows how to set all the options)
-trainer:set_option("learning_rate", learning_rate)
-trainer:set_option("momentum", momentum)
 trainer:set_option("weight_decay", weight_decay)
 -- The bias regularization is a bad thing...
 trainer:set_layerwise_option("B.", "weight_decay", 0)
