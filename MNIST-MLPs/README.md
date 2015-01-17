@@ -46,9 +46,9 @@ And training and test labels by means of `matrix.fromTabFilename` loader,
 which allow to load tabulated ascii files:
 
 ```Lua
--- scalar_add(1) is needed because in Lua class indices start at 1
-local training_labels = matrix.fromTabFilename(train_labels_path):scalar_add(1)
-local test_labels     = matrix.fromTabFilename(test_labels_path):scalar_add(1)
+-- + 1 is needed because in Lua class indices start at 1
+local training_labels = matrix.fromTabFilename(train_labels_path) + 1
+local test_labels     = matrix.fromTabFilename(test_labels_path) + 1
 ```
 
 APRIL-ANN implements a data set abstraction layer which allow to automate a lot
@@ -122,10 +122,13 @@ the MLP and returns a component.  **Note** that components have name strings,
 allowing to perform look-up of components, and its parameters (weight matrices
 and bias vectors) have also names which identified them. For MLPs, the helper
 function declares its weights and bias with names `wN` and `bN`, being N the
-layer number starting at 1.
+layer number starting at 1. For this example, we build an MLP with 784 inputs
+(28x28), 512 logistic hidden layer and 10 softmax output. **Note** that output
+is log-based (`log_softmax`), because we use cross-entropy as loss function and
+it requires log-based outputs.
 
 ```Lua
-local mlp_string = "784 inputs 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 10 log_softmax"
+local mlp_string = "784 inputs 512 logistic 10 log_softmax"
 local thenet = ann.mlp.all_all.generate(mlp_string)
 ```
 
@@ -337,9 +340,9 @@ Execution example
 The execution of `train.lua` script will look as the following example. Note
 that the APRIL-ANN disclaimer is only shown when the standard output is a
 terminal. If you redirect the output to a file the disclaimer won't be shown.
-During following example a machine with *Intel(R) Core(TM) i5-2320 CPU
-@ 3.00GHz* (4 cores), 8G of RAM, and APRIL-ANN compiled with Intel MKL has been
-used. The software needs less than *400M* of main memory to work.
+The following example on a *Intel(R) Core(TM) i5-2320 CPU @ 3.00GHz* (4 cores),
+8G of RAM, and APRIL-ANN compiled with Intel MKL has been used, it takes *14
+min* and less than *400M* of main memory to work.
 
 ```
 $ april-ann train.lua
@@ -349,40 +352,46 @@ This is free software, and you are welcome to redistribute it
 under certain conditions; see LICENSE.txt for details.
 # Lodaing trainig data...
 # Lodaing test data...
-# Training size:        50000
-# Validation size:      10000
-# Test size:            10000
+# Training size:   	50000
+# Validation size: 	10000
+# Test size:       	10000
 # Generating MLP
-# Epoch Train-CE Val-ER best_epoch best_val_error        time/epoch norm2
-# VAL  CLASS ERROR 73.1500 %  7315
-# TEST CLASS ERROR 72.0100 %  7200
-    1 2.336220 0.731500        1 0.731500        cpu: 31.11 wall: 8.37 :: norm2 w=   1.4756  b=   0.0107
-# VAL  CLASS ERROR 55.3000 %  5529
-# TEST CLASS ERROR 55.1600 %  5515
-    2 2.094389 0.553000        2 0.553000        cpu: 30.99 wall: 8.26 :: norm2 w=   1.4827  b=   0.0235
-# VAL  CLASS ERROR 49.1700 %  4916
-# TEST CLASS ERROR 49.6700 %  4966
-    3 1.946746 0.491700        3 0.491700        cpu: 30.99 wall: 8.33 :: norm2 w=   1.5177  b=   0.0207
-    4 1.869048 0.544400        3 0.491700        cpu: 27.40 wall: 7.37 :: norm2 w=   1.5359  b=   0.0336
-# VAL  CLASS ERROR 32.0900 %  3208
-# TEST CLASS ERROR 32.8600 %  3285
-    5 1.579930 0.320900        5 0.320900        cpu: 28.19 wall: 7.57 :: norm2 w=   1.5673  b=   0.0280
-# VAL  CLASS ERROR 28.9000 %  2890
-# TEST CLASS ERROR 30.3000 %  3030
-    6 1.553403 0.289000        6 0.289000        cpu: 28.47 wall: 7.64 :: norm2 w=   1.5828  b=   0.0366
-# VAL  CLASS ERROR 27.9600 %  2795
-# TEST CLASS ERROR 29.0600 %  2906
-    7 1.166165 0.279600        7 0.279600        cpu: 28.74 wall: 7.70 :: norm2 w=   1.6127  b=   0.0372
+# Epoch Train-CE Val-ER best_epoch best_val_error 	 time/epoch norm2
+# VAL  CLASS ERROR 66.3600 %  6636
+# TEST CLASS ERROR 66.0300 %  6603
+    1 2.599951 0.663600        1 0.663600 	 cpu: 2.26 wall: 0.75 :: norm2 w=   1.4494  b=   0.0104
+# VAL  CLASS ERROR 52.6100 %  5260
+# TEST CLASS ERROR 52.7900 %  5278
+    2 1.956704 0.526100        2 0.526100 	 cpu: 1.74 wall: 0.68 :: norm2 w=   1.4585  b=   0.0145
+# VAL  CLASS ERROR 48.7200 %  4871
+# TEST CLASS ERROR 52.0000 %  5199
+    3 1.842501 0.487200        3 0.487200 	 cpu: 1.57 wall: 0.65 :: norm2 w=   1.4662  b=   0.0230
+    4 1.671368 0.518600        3 0.487200 	 cpu: 1.32 wall: 0.56 :: norm2 w=   1.4876  b=   0.0246
+# VAL  CLASS ERROR 27.9100 %  2791
+# TEST CLASS ERROR 29.2400 %  2924
+    5 1.462207 0.279100        5 0.279100 	 cpu: 1.30 wall: 0.57 :: norm2 w=   1.4925  b=   0.0255
+# VAL  CLASS ERROR 27.5300 %  2752
+# TEST CLASS ERROR 28.6600 %  2865
+    6 1.237785 0.275300        6 0.275300 	 cpu: 1.29 wall: 0.57 :: norm2 w=   1.5056  b=   0.0328
+# VAL  CLASS ERROR 23.9700 %  2397
+# TEST CLASS ERROR 24.7300 %  2472
+    7 1.120062 0.239700        7 0.239700 	 cpu: 1.28 wall: 0.58 :: norm2 w=   1.5162  b=   0.0317
   ...    ...      ...
- 2124 0.008260 0.010300     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6466  b=   0.4112
- 2125 0.010547 0.010400     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6487  b=   0.4136
- 2126 0.101701 0.010500     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6491  b=   0.4217
- 2127 0.052404 0.009700     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6496  b=   0.4169
- 2128 0.023542 0.010700     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6496  b=   0.4168
-# Wall total time: 13410.422    per epoch: 6.302
-# CPU  total time: 41465.399    per epoch: 19.486
-# VAL  CLASS ERROR 0.9200 %  92
-# TEST CLASS ERROR 0.9200 %  92
+ 2740 0.026637 0.020900     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.8019  b=   0.6560
+ 2741 0.005630 0.021700     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.8019  b=   0.6579
+ 2742 0.024891 0.021500     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.8006  b=   0.6613
+ 2743 0.015984 0.021000     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7951  b=   0.6626
+ 2744 0.033950 0.021000     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7721  b=   0.6641
+ 2745 0.022314 0.019900     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7912  b=   0.6622
+ 2746 0.010544 0.020900     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7914  b=   0.6619
+ 2747 0.008991 0.019800     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7911  b=   0.6634
+ 2748 0.008733 0.018900     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7972  b=   0.6626
+ 2749 0.011232 0.019900     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.7939  b=   0.6645
+ 2750 0.009123 0.019100     2350 0.018200 	 cpu: 0.61 wall: 0.31 :: norm2 w=   8.8043  b=   0.6613
+# Wall total time: 862.101    per epoch: 0.313
+# CPU  total time: 1687.841    per epoch: 0.614
+# VAL  CLASS ERROR 1.8200 %  182
+# TEST CLASS ERROR 1.8900 %  188
 ```
 
 Data conversion to APRIL-ANN format
