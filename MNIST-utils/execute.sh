@@ -13,7 +13,7 @@ data_path=$tmp_path/mnist
 mkdir -p $data_path
 
 check_command wget
-check_command zcat
+check_command gunzip
 check_command g++
 
 download $base_url $train_images $data_path
@@ -33,7 +33,7 @@ extract_images()
     dest=$2
     if [[ ! -e $dest ]]; then
         message "Extracting images $orig"
-        zcat $orig | $extract_images_script > $dest
+        gunzip -d -c $orig | $extract_images_script > $dest
     else
         warning "Skipping images $orig"
     fi
@@ -45,7 +45,7 @@ extract_labels()
     dest=$2
     if [[ ! -e $dest ]]; then
         message "Extracting labels $orig"
-        zcat $orig | $extract_labels_script > $dest
+        gunzip -d -c $orig | $extract_labels_script > $dest
     else
         warning "Skipping labels $orig"
     fi
