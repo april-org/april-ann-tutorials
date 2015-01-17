@@ -55,7 +55,7 @@ if [[ -z $APRIL_ANN_TUTORIALS_CONFIGURED ]]; then
         cd $tmp_path
 
         if [[ ! -e $VERSION ]]; then
-            git clone git@github.com:pakozm/april-ann.git $VERSION
+            git clone https://github.com/pakozm/april-ann.git $VERSION
         fi
 
         cd $VERSION
