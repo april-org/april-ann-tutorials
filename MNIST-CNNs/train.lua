@@ -223,7 +223,7 @@ for _,B in trainer:iterate_weights("B.") do B:zeros() end
 
 -- the stopping criterion is 400 epochs without improvement in validation loss
 local stopping_criterion = trainable.stopping_criteria.make_max_epochs_wo_imp_absolute(400)
-local train_func = trainable.train_holdout_validation{
+local pocket_alg = trainable.train_holdout_validation{
   min_epochs = 100,
   max_epochs = 4000,
   stopping_criterion = stopping_criterion,
@@ -233,9 +233,9 @@ print("# Epoch Train-CE Val-ER best_epoch best_val_error \t time/epoch norm2")
 local cronometro = util.stopwatch()
 cronometro:go()
 
--- train until train_func:execute is false; trian_func uses the given stopping
+-- train until pocket_alg:execute is false; trian_func uses the given stopping
 -- criterion to decide when to return true or false
-while train_func:execute(
+while pocket_alg:execute(
   function()
     local train_error = trainer:train_dataset(train_data)
     local val_error   = trainer:validate_dataset(validation_data)
@@ -243,11 +243,11 @@ while train_func:execute(
     -- validation error
     return trainer, train_error, val_error
 end) do
-  local epoch = train_func:get_state_table().current_epoch
+  local epoch = pocket_alg:get_state_table().current_epoch
   -- when an epoch is the best, show at screen the validation and test zero-one
   -- errors (classification errors) which is (100 - accuracy)
-  if train_func:is_best() then
-    local val_rel_error = train_func:get_state_table().validation_error
+  if pocket_alg:is_best() then
+    local val_rel_error = pocket_alg:get_state_table().validation_error
     local tst_rel_error = trainer:validate_dataset(test_data)
     printf("# VAL  CLASS ERROR %.4f %%  %d\n",
 	   val_rel_error*100, val_rel_error*validation_input:numPatterns())
@@ -260,7 +260,7 @@ end) do
   end
   local cpu,wall = cronometro:read()
   printf("%s \t cpu: %.2f wall: %.2f :: norm2 w= %8.4f  b= %8.4f\n",
-         train_func:get_state_string(),
+         pocket_alg:get_state_string(),
   	 cpu/epoch, wall/epoch,
 	 trainer:norm2(".*W.*"),
 	 trainer:norm2(".*B.*"))
@@ -268,12 +268,12 @@ end) do
 end
 cronometro:stop()
 local cpu,wall = cronometro:read()
-local epochs = train_func:get_state_table().current_epoch
+local epochs = pocket_alg:get_state_table().current_epoch
 printf("# Wall total time: %.3f    per epoch: %.3f\n", wall, wall/epochs)
 printf("# CPU  total time: %.3f    per epoch: %.3f\n", cpu, cpu/epochs)
 
 -- take the best model and compute zero-one error (classification error)
-local best = train_func:get_state_table().best
+local best = pocket_alg:get_state_table().best
 local val_rel_error = best:validate_dataset{
   input_dataset = validation_input,
   output_dataset = validation_output,
