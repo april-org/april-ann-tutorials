@@ -360,7 +360,7 @@ default in APRIL-ANN, in this case we use the most basic, we train the CNN until
 the validation loss is not improved for 400 epochs. The pocket algorithm is
 implemented by the object `trainable.train_holdout_validation`.
 
-```
+```Lua
 -- the stopping criterion is 400 epochs without improvement in validation loss
 local stopping_criterion = trainable.stopping_criteria.make_max_epochs_wo_imp_absolute(400)
 local pocket_alg = trainable.train_holdout_validation{
