@@ -416,7 +416,7 @@ end
 Once the training has finished, it is possible to take the best model and
 serialize it to a file.
 
-``Lua
+```Lua
 local best = pocket_alg:get_state_table().best
 util.serialize(best, "best_model.lua")
 ```
