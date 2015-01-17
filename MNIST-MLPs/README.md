@@ -1,5 +1,5 @@
-Convolutional Neural Networks - MNIST
-=====================================
+Multilayer Perceptron - MNIST
+=============================
 
 You can download and execute this tutorial executing:
 
@@ -18,8 +18,8 @@ This tutorials is an example of Convolutional Neural Networks using APRIL-ANN
 toolkit for basic MNIST task. The following description is intended to describe
 the most important parts to new APRIL-ANN users.
 
-It is important to understand the concept of CNNs, you can visit the following
-link at [deeplearning.net](http://deeplearning.net/tutorial/lenet.html) to
+It is important to understand the concept of MLPs, you can visit the following
+link at [Wikepedia](https://en.wikipedia.org/wiki/Multilayer_perceptron) to
 introduce yourself in the topic.
 
 ### Data loading
@@ -110,138 +110,41 @@ So, at this point, all data has been properly loaded in variables *train_input*,
 CNN needs this shape to perform the convolution, the shape would be explicitly
 recovered.
 
-### Creating the CNN layers
+### Creating the MLP
 
 In APRIL-ANN all ANNs are an instance of what we called components. Components
-can be composed in complex structures, and a basic CNN is a stack of several
+can be composed in complex structures, and a basic MLP is a stack of several
 layers. At the end, the component is wrapped into the trainer abstraction, which
 allow to perform automatically a lot of the hard work in training the component.
 
-So, first we need to instantiate a stack component. **Note** that components
-can receive optional name strings, allowing to perform look-up of components.
-In this tutorial we will use names only for places where we need them, but
-the script `train.lua` has name strings in all the available fields.
+For MLPs, APRIL-ANN has a simple procedure which receives a string describing
+the MLP and returns a component.  **Note** that components have name strings,
+allowing to perform look-up of components, and its parameters (weight matrices
+and bias vectors) have also names which identified them. For MLPs, the helper
+function declares its weights and bias with names `wN` and `bN`, being N the
+layer number starting at 1.
 
 ```Lua
-local thenet = ann.components.stack()
+local mlp_string = "784 inputs 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 10 log_softmax"
+local thenet = ann.mlp.all_all.generate(mlp_string)
 ```
 
-The first layer of the CNN is a rewrap layer, which takes as input a vector and
-changes its shape, and because `thenet` is a stack, we just pushed the rewrap
-component in its top layer. The rewrap would transform the input vector into
-a matrix with sizes 1x28x28, being 1 the number of input maps, and 28x28 the
-digit shape.
+It is possible to build more complex neural networks by composing the
+components, as for example in
+[CNNs tutorial](https://github.com/pakozm/april-ann-tutorials/tree/master/MNIST-CNNs).
 
-```Lua
-thenet:push( ann.components.rewrap{ size={1, 28, 28} } )
-```
+### Construction of trainer object and initialization of MLP
 
-Following, we need to push the convolution operation. It needs three components,
-the convolution, the convolution bias and the activation function. The
-convolution bias is given as another component allowing to build CNNs where
-convolutional layers have different kind of biases, or non bias at all. The
-first convolution takes as input one map of data and uses receptive fields
-of 5x5, and produces 8 maps. The activation function is the rectified linear
-unit (ReLU), very popular in deep learning community.
-
-```Lua
--- first kernel convolution with receptive fields of 1x5x5
--- and 8 output maps
-thenet:push( ann.components.convolution{ kernel={1, 5, 5}, n=8,
-                                         weights="W1" } )
--- first convolution bias, over a 3 dimensional matrix with 8 maps
-thenet:push( ann.components.convolution_bias{ n=8, ndims=3,
-                                              weights="B1" } )
--- first convolution activation function
-thenet:push( ann.components.actf.relu() )
-```
-
-Following, we push a `max_pooling` component with a kernel of 1x2x2.
-
-```Lua
--- first max-pooling
-thenet:push( ann.components.max_pooling{ kernel={1, 2, 2} } )
-```
-
-The second convolution has a kernel of 8x5x5 and produces 16 output maps.
-It is followed by ReLU activations and a max pooling with 1x2x2 kernel.
-
-```Lua
--- second kernel convolution with receptive fields of 8x5x5
--- and 16 output maps
-thenet:push( ann.components.convolution{ kernel={8, 5, 5}, n=16,
-                                         weights="W2" } )
--- first convolution bias, over a 3 dimensional matrix with 16 maps
-thenet:push( ann.components.convolution_bias{ n=16, ndims=3,
-                                              weights="B2" } )
--- first convolution activation function
-thenet:push( ann.components.actf.relu() )
--- first max-pooling
-thenet:push( ann.components.max_pooling{ kernel={1, 2, 2} } )
-```
-
-The output of the convolutional layers needs to be transformed into a row vector
-(similar but inverse to the rewrap done at the ANN first layer), because on top
-of the convolutional layers we want to put a fully connected hidden layer and a
-fully connected output layer. We use the component `flatten` to perform this
-operation.
-
-```Lua
-thenet:push( ann.components.flatten() )
-```
-
-We need to push a fully connected component, called `hyperplane` in APRIL-ANN,
-and a hidden ReLU neurons layer. The input of this hidden layer is dependent of
-the convolutional layers output, we can use the method `precompute_output_sizes`
-to compute a Lua table with the dimension sizes. The hidden layer has 128 units.
-
-```Lua
-local conv_out_size = thenet:precompute_output_size{ 28*28 }[1]
--- first fully connected layer
-thenet:push( ann.components.hyperplane{ input=conv_out_size, output=128,
-                                        bias_weights="B3",
-                                        dot_product_weights="W3" } )
--- activation function
-thenet:push( ann.components.actf.relu() )
-```
-
-Following this hidden layer, to avoid overfitting, we push a
-[dropout layer](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf),
-which is also very popular in deep learning community. Dropout receives as
-parameter a probability value (normally 0.5) and a random numbers generator.
-
-```Lua
-local rnd3 = random(8527)
--- dropout component
-thenet:push( ann.components.dropout{ prob=0.5, random=rnd3 } ):
-```
-
-Finally, we need to push the softmax output layer, which is formed by an
-`hyperplane` and a `log_softmax` component. The output of our CNN will be
-log-scaled because we will train it using cross-entropy loss function, and in
-APRIL-ANN this loss function needs log-scaled values.
-
-```Lua
--- output layer hyperplane
-thenet:push( ann.components.hyperplane{ input=128, output= 10,
-                                        bias_weights="B4"),
-                                        dot_product_weights="W4" } )
--- output activation function
-thenet:push( ann.components.actf.log_softmax() )
-```
-
-### Construction of trainer object and initialization of CNN
-
-Once we have our CNN prepared in a component, variable `thenet`, we wrap it into
+Once we have our MLP prepared in a component, variable `thenet`, we wrap it into
 a trainer object. The trainer is an abstraction layer which implements several
 usual things as weights initialization, dataset traversal for training and/or
 validation, and more interesting stuff. So, first, we need to construct the
-trainer object by passing it the CNN component, the loss function, the bunch
+trainer object by passing it the MLP component, the loss function, the bunch
 size (mini-batch size) and the optimization algorithm. The bunch size parameter
 allows to train multiple samples at the same time, improving the efficiency of
 the system, but reducing its convergence speed. The loss function is used during
-training to compute the loss between desired outputs and the CNN outputs. The
-optimizer is an algorithm which takes the weight gradients computed by the CNN
+training to compute the loss between desired outputs and the MLP outputs. The
+optimizer is an algorithm which takes the weight gradients computed by the MLP
 component and update the weight parameters properly. Different optimization
 algorithms are implemented in APRIL-ANN, here we use
 [ADADELTA](http://arxiv.org/pdf/1212.5701v1.pdf), also a popular algorithm in
@@ -275,7 +178,7 @@ local rnd1 = random(1234) -- for weights initialization
 -- randomize the neural network weights (no biases) in the range
 -- [ inf / sqrt(fanin + fanout), sup / sqrt(fanin + fanout) ]
 trainer:randomize_weights{
-  name_match = "W.*", -- only initialize weight matrices
+  name_match = "w.*", -- only initialize weight matrices
   random     =  rnd1,
   inf        = -math.sqrt(6),
   sup        =  math.sqrt(6),
@@ -284,7 +187,7 @@ trainer:randomize_weights{
 }
 
 -- initializes all biases to zero
-for _,B in trainer:iterate_weights("B.*") do B:zeros() end
+for _,b in trainer:iterate_weights("b.*") do b:zeros() end
 ```
 
 The ADADELTA algorithm has some options (also known as hyper-parameters) which
@@ -298,7 +201,7 @@ globally to 0.0001 and layerwise 0.0 for biases.
 -- and knows how to set all the options)
 trainer:set_option("weight_decay", 0.0001)
 -- The bias regularization is a bad thing...
-trainer:set_layerwise_option("B.", "weight_decay", 0)
+trainer:set_layerwise_option("b.*", "weight_decay", 0)
 ```
 
 ### The pocket algorithm and training loop
@@ -307,18 +210,19 @@ We have ready the most important concepts for APRIL-ANN, dataset and trainer
 objects. In order to prepare the training loop, it is necessary to prepare three
 important tables, the `train_data`, `validation_data` and `test_data` tables.
 These three tables will be used with trainer methods `train_dataset`, and
-`validate_dataset` to update CNN weights using the given `train_data` table, and
+`validate_dataset` to update MLP weights using the given `train_data` table, and
 for loss computation (`validate_dataset`) using `validation_data` and
 `test_data`.
 
 ```Lua
 local rnd2 = random(6543) -- for shuffle of the training samples
+local rnd3 = random(8527) -- for perturbation of data
 -- auxiliary table with the fields necessary for trainer:train_dataset method;
 -- it trains selecting a random set of samples with replacement
 local train_data = {
   -- the training input is perturbed with gaussian noise
   input_dataset  = dataset.perturbation{ mean=0.0, variance=0.02,
-					 random=rnd3, -- reuse the same RNG as dropout component
+					 random=rnd3,
 					 dataset=train_input },
   output_dataset = train_output,
   shuffle        = rnd2, -- indicates to randomly sort data in every epoch
@@ -356,7 +260,7 @@ The training loop uses an object which implements the known as
 takes note of the best validation loss iteration and keeps a copy of the model.
 This copy is updated every time the validation loss is improved, until a simple
 convergence criterion is true. Different stopping criteria are available by
-default in APRIL-ANN, in this case we use the most basic, we train the CNN until
+default in APRIL-ANN, in this case we use the most basic, we train the MLP until
 the validation loss is not improved for 400 epochs. The pocket algorithm is
 implemented by the object `trainable.train_holdout_validation`.
 
@@ -385,7 +289,7 @@ validation loss until current iteration.
 -- criterion to decide when to return true or false
 while pocket_alg:execute(
   function()
-    -- update the CNN weights and biases using train_data configuration
+    -- update the MLP weights and biases using train_data configuration
     local train_error = trainer:train_dataset(train_data)
     -- computes validation loss
     local val_error   = trainer:validate_dataset(validation_data)
@@ -402,9 +306,9 @@ end) do
 	   val_rel_error*100, val_rel_error*validation_input:numPatterns())
     printf("# TEST CLASS ERROR %.4f %%  %d\n",
 	   tst_rel_error*100, tst_rel_error*test_input:numPatterns())
-    -- save the input filters (W1 weight matrix)
-    local img = ann.connections.input_filters_image(trainer:weights("W1"),
-                                                    {5, 5})
+    -- save the input filters (w1 weight matrix)
+    local img = ann.connections.input_filters_image(trainer:weights("w1"),
+                                                    {28, 28})
     local epoch = pocket_alg:get_state_table().current_epoch
     ImageIO.write(img, string.format("filters-%04d.png", epoch))
   end
@@ -504,5 +408,5 @@ $ ./extract_mnist_labels t10k-labels-idx1-ubyte.gz  > t10k-labels-idx1-ubyte.txt
 ```
 
 You can convert the data in other directory and put symbolic links in the
-`MNIST-CNNs` directory, or modify the `datadir` variable into the `train.lua`
+`MNIST-MLPs` directory, or modify the `datadir` variable into the `train.lua`
 script.
