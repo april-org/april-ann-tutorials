@@ -46,9 +46,9 @@ And training and test labels by means of `matrix.fromTabFilename` loader,
 which allow to load tabulated ascii files:
 
 ```Lua
--- scalar_add(1) is needed because in Lua class indices start at 1
-local training_labels = matrix.fromTabFilename(train_labels_path):scalar_add(1)
-local test_labels     = matrix.fromTabFilename(test_labels_path):scalar_add(1)
+-- + 1 is needed because in Lua class indices start at 1
+local training_labels = matrix.fromTabFilename(train_labels_path) + 1
+local test_labels     = matrix.fromTabFilename(test_labels_path) + 1
 ```
 
 APRIL-ANN implements a data set abstraction layer which allow to automate a lot
@@ -433,9 +433,9 @@ Execution example
 The execution of `train.lua` script will look as the following example. Note
 that the APRIL-ANN disclaimer is only shown when the standard output is a
 terminal. If you redirect the output to a file the disclaimer won't be shown.
-During following example a machine with *Intel(R) Core(TM) i5-2320 CPU
-@ 3.00GHz* (4 cores), 8G of RAM, and APRIL-ANN compiled with Intel MKL has been
-used. The software needs less than *400M* of main memory to work.
+Following example on a Intel(R) Core(TM) i5-2320 CPU @ 3.00GHz (4 cores), 8G
+of RAM, and APRIL-ANN compiled with Intel MKL, it takes *142 min* and less
+than *400M* of main memory.
 
 ```
 $ april-ann train.lua
@@ -470,13 +470,13 @@ under certain conditions; see LICENSE.txt for details.
 # TEST CLASS ERROR 29.0600 %  2906
     7 1.166165 0.279600        7 0.279600        cpu: 28.74 wall: 7.70 :: norm2 w=   1.6127  b=   0.0372
   ...    ...      ...
- 2124 0.008260 0.010300     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6466  b=   0.4112
- 2125 0.010547 0.010400     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6487  b=   0.4136
- 2126 0.101701 0.010500     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6491  b=   0.4217
- 2127 0.052404 0.009700     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6496  b=   0.4169
- 2128 0.023542 0.010700     1728 0.009200 	 cpu: 19.49 wall: 6.30 :: norm2 w=   3.6496  b=   0.4168
-# Wall total time: 13410.422    per epoch: 6.302
-# CPU  total time: 41465.399    per epoch: 19.486
+ 2124 0.008260 0.010300     1728 0.009200        cpu: 14.38 wall: 4.01 :: norm2 w=   3.6466  b=   0.4112
+ 2125 0.010547 0.010400     1728 0.009200        cpu: 14.38 wall: 4.01 :: norm2 w=   3.6487  b=   0.4136
+ 2126 0.101701 0.010500     1728 0.009200        cpu: 14.38 wall: 4.01 :: norm2 w=   3.6491  b=   0.4217
+ 2127 0.052404 0.009700     1728 0.009200        cpu: 14.38 wall: 4.01 :: norm2 w=   3.6496  b=   0.4169
+ 2128 0.023542 0.010700     1728 0.009200        cpu: 14.38 wall: 4.01 :: norm2 w=   3.6496  b=   0.4168
+# Wall total time: 8523.779    per epoch: 4.006
+# CPU  total time: 30599.226    per epoch: 14.379
 # VAL  CLASS ERROR 0.9200 %  92
 # TEST CLASS ERROR 0.9200 %  92
 ```
