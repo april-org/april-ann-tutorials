@@ -301,7 +301,7 @@ trainer:set_option("weight_decay", 0.0001)
 trainer:set_layerwise_option("B.", "weight_decay", 0)
 ```
 
-### Preparing training loop: pocket algorithm
+### The pocket algorithm and training loop
 
 We have ready the most important concepts for APRIL-ANN, dataset and trainer
 objects. In order to prepare the training loop, it is necessary to prepare three
