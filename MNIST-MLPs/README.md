@@ -14,7 +14,7 @@ script `train.lua`.
 Description
 -----------
 
-This tutorials is an example of Convolutional Neural Networks using APRIL-ANN
+This tutorials is an example of Multilayer Perceptrons using APRIL-ANN
 toolkit for basic MNIST task. The following description is intended to describe
 the most important parts to new APRIL-ANN users.
 
