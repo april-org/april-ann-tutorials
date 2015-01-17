@@ -106,9 +106,8 @@ local validation_output = dataset.slice(train_output_data, 50001, 60000)
 So, at this point, all data has been properly loaded in variables *train_input*,
 *train_output*, *validation_input* , *validation_output*, *test_input*,
 *test_output*. **Note** that all of these datasets produce as output row vectors
-(not matrices), so the digits shape is lost in the process, however, because the
-CNN needs this shape to perform the convolution, the shape would be explicitly
-recovered.
+(not matrices), so the digits shape is lost in the process, but the MLP just
+needs that, so it is good.
 
 ### Creating the MLP
 
