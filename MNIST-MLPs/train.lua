@@ -23,7 +23,7 @@ local weight_decay  = 0.0001
 local replacement   = 256
 ----------------------------------------------------------
 -- MLP CONFIGURATION
-local mlp_string = "784 inputs 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 1000 relu 10 log_softmax"
+local mlp_string = "784 inputs 512 logistic 10 log_softmax"
 ----------------------------------------------------------
  -- data has to be in the same the path where the script is located
 local datadir = arg[0]:get_path()
@@ -36,11 +36,12 @@ local test_labels_filename  = "t10k-labels-idx1-ubyte.txt"
 print("# Lodaing trainig data...")
 local training_samples = matrix.fromFilename(datadir..train_filename)
 print("# Lodaing test data...")
-local test_samples     = matrix.fromFilename(datadir..test_filename)
+local test_samples = matrix.fromFilename(datadir..test_filename)
 
 -- load training and test labels
-local training_labels = matrix.fromTabFilename(datadir..train_labels_filename):scalar_add(1)
-local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename):scalar_add(1)
+-- + 1 is needed because in Lua the class indices start at 1
+local training_labels = matrix.fromTabFilename(datadir..train_labels_filename) + 1
+local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename) + 1
 
 -- the output is an indexed dataset over a identity which allows to produce a
 -- local encoding
@@ -143,7 +144,7 @@ trainer:randomize_weights{
 }
 
 -- initializes all biases to zero
-for _,B in trainer:iterate_weights("w.*") do B:zeros() end
+for _,b in trainer:iterate_weights("b.*") do b:zeros() end
 
 -- the stopping criterion is 400 epochs without improvement in validation loss
 local stopping_criterion = trainable.stopping_criteria.make_max_epochs_wo_imp_absolute(400)
