@@ -39,11 +39,8 @@ local hidden1f = "relu"
 local datadir = arg[0]:get_path()
 local train_filename = "train-images-idx3-ubyte.mat"
 local test_filename  = "t10k-images-idx3-ubyte.mat"
-
-local function load_labels(filename)
-  -- NOTE: add(1) because indices starts at 0, and in Lua they had to start at 1
-  return iterator(io.lines(filename)):map(tonumber):map(bind(math.add, 1)):table()
-end
+local train_labels_filename = "train-labels-idx1-ubyte.txt"
+local test_labels_filename  = "t10k-labels-idx1-ubyte.txt"
 
 -- loads the training and test matrices
 print("# Lodaing trainig data...")
@@ -52,31 +49,26 @@ print("# Lodaing test data...")
 local test_samples     = matrix.fromFilename(datadir..test_filename)
 
 -- load training and test labels
-local aux = load_labels(datadir.."train-labels-idx1-ubyte.txt")
-local training_labels = matrix(#aux, aux)
-local aux = load_labels(datadir.."t10k-labels-idx1-ubyte.txt")
-local test_labels = matrix(#aux, aux)
+local training_labels = matrix.fromTabFilename(datadir..train_labels_filename):scalar_add(1)
+local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename):scalar_add(1)
 
 -- the output is an indexed dataset over a identity which allows to produce a
 -- local encoding
 local identity = dataset.identity(10, 0.0, 1.0)
 
--- generate training dataset
-local train_input_data = dataset.matrix(training_samples, {
-                                          patternSize = {28, 28},
-                                          offset      = {0, 0},
-                                          numSteps    = {training_labels:dim()[1], 1},
-                                          stepSize    = {28, 28},
-})
+local function build_input_output_dataset(samples, labels)
+  local input_ds = dataset.matrix(samples, {
+                                    patternSize = {28, 28},
+                                    offset      = {0, 0},
+                                    numSteps    = {labels:dim(1), 1},
+                                    stepSize    = {28, 28}, })
+  local output_ds = dataset.indexed(dataset.matrix(labels), { identity })
+  return input_ds, output_ds
+end
 
--- the output is an indexed over the previous identity dataset
-local train_output_data = dataset.indexed(dataset.matrix(training_labels,{
-                                                           patternSize = { 1 },
-                                                           offset      = {0},
-                                                           numSteps    = {training_labels:dim()[1]},
-                                                           stepSize    = { 1 },
-                                                        }),
-                                          { identity })
+-- generate training datasets
+local train_input_data, train_output_data =
+  build_input_output_dataset(training_samples, training_labels)
 
 -- training partition (50000 samples)
 local train_input  = dataset.slice(train_input_data,  1, 50000)
@@ -87,21 +79,8 @@ local validation_input  = dataset.slice(train_input_data,  50001, 60000)
 local validation_output = dataset.slice(train_output_data, 50001, 60000)
 
 -- generate test dataset
-local test_input = dataset.matrix(test_samples,{
-                                    patternSize = {28, 28},
-                                    offset      = {0, 0},
-                                    numSteps    = {test_labels:dim()[1], 1},
-                                    stepSize    = {28, 28},
-})
-
--- the output is an indexed over the previous identity dataset
-local test_output = dataset.indexed(dataset.matrix(test_labels,{
-                                                     patternSize = { 1 },
-                                                     offset      = {0},
-                                                     numSteps    = {test_labels:dim()[1]},
-                                                     stepSize    = { 1 },
-                                                  }),
-                                    { identity })
+local test_input, test_output =
+  build_input_output_dataset(test_samples, test_labels)
 
 local rnd1 = random(1234)
 local rnd2 = random(6543)
@@ -125,6 +104,7 @@ local validation_data = {
   output_dataset = validation_output,
   loss = ann.loss.zero_one(), -- force computation of classification error
                               -- instead of the loss given to the trainer
+  bunch_size = 512, -- forces a large bunch_size for validation
 }
 
 -- auxiliary table with the fields necessary for trainer:validate_dataset method
@@ -132,65 +112,81 @@ local test_data = {
   input_dataset  = test_input,
   output_dataset = test_output,
   loss = ann.loss.zero_one(), -- forces computation of classification error
+  bunch_size = 512, -- forces a large bunch_size for validation
 }
 
 print("# Training size:   ", train_input:numPatterns())
 print("# Validation size: ", validation_input:numPatterns())
+print("# Test size:       ", test_input:numPatterns())
 print("# Generating MLP")
+
+-- auxiliary function which concatenates a prefix plus a number to generate
+-- names automatically
+local gname
+do
+  local d = {} -- dictionary to transform prefix name to index number
+  gname = function(prefix)
+    local i = (d[prefix] or 0) + 1
+    d[prefix] = i
+    return prefix .. tostring(i)
+  end
+end
+
+local function push_convolution(thenet, kernel, n, actf, pooling)
+  thenet:
+    -- kernel convolution
+    push( ann.components.convolution{ kernel=kernel, n=n,
+                                      name=gname("conv-W"),
+                                      weights=gname("W") } ):
+    -- convolution bias
+    push( ann.components.convolution_bias{ n=n, ndims=#kernel,
+                                           name=gname("conv-B"),
+                                           weights=gname("B") } ):
+    -- convolution activation function
+    push( ann.components.actf[actf]{ name=gname("actf-") } ):
+    -- max-pooling
+    push( ann.components.max_pooling{ kernel=pooling,
+                                      name=gname("pool-") } )
+end
 
 -- the net is a stack of components
 local thenet = ann.components.stack{ name="stack" }:
   -- the first one transform the dataset output (an array) into a matrix shape
-  push( ann.components.rewrap{ size=ishape } ):
-  -- first kernel convolution
-  push( ann.components.convolution{ kernel=conv1, n=nconv1,
-                                    name="conv-W1", weights="W1" } ):
-  -- first convolution bias
-  push( ann.components.convolution_bias{ n=nconv1, ndims=#conv1,
-                                         name="conv-B1", weights="B1" } ):
-  -- first convolution activation function
-  push( ann.components.actf[conv1f]{ name="actf-1" } ):
-  -- first max-pooling
-  push( ann.components.max_pooling{ kernel=maxp1,
-                                    name="pool-1" } ):
-  -- second kernel convolution
-  push( ann.components.convolution{ kernel=conv2, n=nconv2,
-                                    name="conv-W2", weights="W2" } ):
-  -- second convolution bias
-  push( ann.components.convolution_bias{ n=nconv2, ndims=#conv2,
-                                         name="conv-B2", weights="B2" } ):
-  -- second convolution activation function
-  push( ann.components.actf[conv2f]{ name="actf-2" } ):
-  -- second max-pooling
-  push( ann.components.max_pooling{ kernel=maxp2,
-                                    name="pool-2" } ):
-  -- the output of the convolution is converted into an array to be the input of
-  -- a fully connected MLP layer
-  push( ann.components.flatten{ name="flatten" } )
+  push( ann.components.rewrap{ size=ishape } )
+
+-- first convolution plus max pooling
+push_convolution(thenet, conv1, nconv1, conv1f, maxp1)
+-- second convolution plus max pooling
+push_convolution(thenet, conv2, nconv2, conv2f, maxp2)
+
+-- the output of the convolution is converted into an array to be the input of
+-- a fully connected MLP layer
+thenet:push( ann.components.flatten{ name="flatten" } )
+
 -- we compute here the output size of the convolution which will be the input
 -- size of the first fully connected layer
-local conv_out_size = thenet:precompute_output_size{ 28*28 }
-local conv_out_size = iterator(ipairs(conv_out_size)):select(2):reduce(math.mul,1)
+local conv_out_size = thenet:precompute_output_size{ 28*28 }[1]
+
 -- first fully connected layer
 thenet:push( ann.components.hyperplane{ input=conv_out_size, output=hidden1,
-                                        name="hyp-1",
-                                        bias_name="B3",
-                                        dot_product_name="W3",
-                                        bias_weights="B3",
-                                        dot_product_weights="W3" } ):
+                                        name=gname("hyp-"),
+                                        bias_name=gname("B"),
+                                        dot_product_name=gname("W"),
+                                        bias_weights=gname("B"),
+                                        dot_product_weights=gname("W") } ):
   -- activation function
-  push( ann.components.actf[hidden1f]{ name="actf-3" } ):
+  push( ann.components.actf[hidden1f]{ name=gname("actf-") } ):
   -- dropout to avoid overfitting
   push( ann.components.dropout{ name="dropout", prob=0.5, random=rnd3 } ):
   -- output layer
   push( ann.components.hyperplane{ input=hidden1, output= 10,
-                                   name="hyp-2",
-                                   bias_name="B4",
-                                   dot_product_name="W4",
-                                   bias_weights="B4",
-                                   dot_product_weights="W4" } ):
+                                   name=gname("hyp-"),
+                                   bias_name=gname("B"),
+                                   dot_product_name=gname("W"),
+                                   bias_weights=gname("B"),
+                                   dot_product_weights=gname("W") } ):
   -- output activation function
-  push( ann.components.actf.log_softmax{ name="actf-4" } )
+  push( ann.components.actf.log_softmax{ name=gname("actf-") } )
 
 -- the trainer knows how ANN components, loss function and optimizer are tightly
 -- together
@@ -209,7 +205,7 @@ trainer:build()
 -- and knows how to set all the options)
 trainer:set_option("weight_decay", weight_decay)
 -- The bias regularization is a bad thing...
-trainer:set_layerwise_option("B.", "weight_decay", 0)
+trainer:set_layerwise_option("B.*", "weight_decay", 0)
 
 -- randomize the neural network weights (no biases) in the range
 -- [ inf / sqrt(fanin + fanout), sup / sqrt(fanin + fanout) ]
