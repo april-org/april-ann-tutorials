@@ -29,8 +29,44 @@ message()
 
 check_command()
 {
-    command -v $1 >/dev/null 2>&1 ||
-    error "I require $1 but it's not installed. Aborting."
+    for cmd in $@; do
+        command -v $cmd >/dev/null 2>&1 ||
+        error "I require $1 but it's not installed. Aborting."
+    done
+}
+
+install()
+{
+    need_install=0
+    list=""
+    for cmd in $@; do
+        if ! command -v $cmd > /dev/null 2>&1; then
+            need_install=1
+            list="$cmd $list"
+        fi
+    done
+    if [[ $need_install = 1 ]]; then
+        message "Installing packages: $list"
+        warning "You need to be sudoer for this installation"
+        UNAME=$(uname)
+        if [[ $UNAME = "Linux" ]]; then
+            check_command apt-get
+            sudo apt-get install -qq $list
+            if [[ $? != 0 ]]; then
+                error "Unable to install dependencies"
+            fi
+        elif [[ $UNAME = "Darwin" ]]; then
+            if [ $(which port) ]; then
+                sudo port install $list
+            elif [ $(which brew) ]; then
+                brew install $list
+            else
+                error "Error, impossible to install dependencies, this scripts needs MacPorts or Homebrew installed"
+            fi
+        else
+            error "Unable to run for system: $UNAME$"
+        fi
+    fi
 }
 
 download()
@@ -49,6 +85,7 @@ download()
 }
 
 if [[ -z $APRIL_ANN_TUTORIALS_CONFIGURED ]]; then
+    install wget
 
     if [ ! $(which april-ann) ]; then
 

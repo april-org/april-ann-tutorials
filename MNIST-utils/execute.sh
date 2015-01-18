@@ -12,9 +12,9 @@ data_path=$tmp_path/mnist
 
 mkdir -p $data_path
 
-check_command wget
-check_command gunzip
-check_command g++
+check_command gunzip g++
+
+install wget
 
 download $base_url $train_images $data_path
 download $base_url $train_labels $data_path
@@ -35,7 +35,7 @@ extract_images()
         message "Extracting images $orig"
         gunzip -d -c $orig | $extract_images_script > $dest
     else
-        warning "Skipping images $orig"
+        warning "Skipping extraction of images $orig"
     fi
 }
 
@@ -47,7 +47,7 @@ extract_labels()
         message "Extracting labels $orig"
         gunzip -d -c $orig | $extract_labels_script > $dest
     else
-        warning "Skipping labels $orig"
+        warning "Skipping extraction of labels $orig"
     fi
 }
 
