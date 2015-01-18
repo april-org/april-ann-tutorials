@@ -96,6 +96,25 @@ So, at this point, all data has been properly loaded in variables *train_input*,
 CNN needs this shape to perform the convolution, the shape would be explicitly
 recovered.
 
+Execution output
+----------------
+
+Once all the data has been downloaded, and APRIL-ANN matrices generated,
+it is possible to run the `init.lua` script. It loads all data into memory
+and splits it into training, validation and test sets.
+
+```Lua
+$ april-ann init.lua
+APRIL-ANN v0.4.0 COMMIT 2361  Copyright (C) 2012-2015 DSIC-UPV, CEU-UCH
+This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
+This is free software, and you are welcome to redistribute it
+under certain conditions; see LICENSE.txt for details.
+# Lodaing trainig data...
+# Lodaing test data...
+# Training size:   	50000
+# Validation size: 	10000
+# Test size:       	10000
+```
 
 Data conversion to APRIL-ANN format
 -----------------------------------
