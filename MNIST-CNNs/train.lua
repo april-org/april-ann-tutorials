@@ -16,6 +16,18 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
 
+----------------------------------------------------------
+-- update package.path adding a relative path from current script path
+local basedir = arg[0]:get_path()
+package.path = package.path .. ";" .. basedir .. "../?/init.lua"
+-- Loading data by requiring the module of MNIST-utils directory
+local mnist_data = require "MNIST-utils"
+-- unpacking data table into local variables
+local train_input, train_output,
+validation_input, validation_output,
+test_input, test_output = table.unpack(mnist_data)
+----------------------------------------------------------
+
 -- bunch_size controls the mini-batch for weight updates
 local bunch_size    = 128
 local weight_decay  = 0.0001
@@ -35,52 +47,6 @@ local maxp2    = {1, 2, 2}
 local hidden1  = 128
 local hidden1f = "relu"
 ----------------------------------------------------------
- -- data has to be in the same the path where the script is located
-local datadir = arg[0]:get_path()
-local train_filename = "train-images-idx3-ubyte.mat"
-local test_filename  = "t10k-images-idx3-ubyte.mat"
-local train_labels_filename = "train-labels-idx1-ubyte.txt"
-local test_labels_filename  = "t10k-labels-idx1-ubyte.txt"
-
--- loads the training and test matrices
-print("# Lodaing trainig data...")
-local training_samples = matrix.fromFilename(datadir..train_filename)
-print("# Lodaing test data...")
-local test_samples     = matrix.fromFilename(datadir..test_filename)
-
--- load training and test labels
-local training_labels = matrix.fromTabFilename(datadir..train_labels_filename):scalar_add(1)
-local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename):scalar_add(1)
-
--- the output is an indexed dataset over a identity which allows to produce a
--- local encoding
-local identity = dataset.identity(10, 0.0, 1.0)
-
-local function build_input_output_dataset(samples, labels)
-  local input_ds = dataset.matrix(samples, {
-                                    patternSize = {28, 28},
-                                    offset      = {0, 0},
-                                    numSteps    = {labels:dim(1), 1},
-                                    stepSize    = {28, 28}, })
-  local output_ds = dataset.indexed(dataset.matrix(labels), { identity })
-  return input_ds, output_ds
-end
-
--- generate training datasets
-local train_input_data, train_output_data =
-  build_input_output_dataset(training_samples, training_labels)
-
--- training partition (50000 samples)
-local train_input  = dataset.slice(train_input_data,  1, 50000)
-local train_output = dataset.slice(train_output_data, 1, 50000)
-
--- validation partition (10000 samples)
-local validation_input  = dataset.slice(train_input_data,  50001, 60000)
-local validation_output = dataset.slice(train_output_data, 50001, 60000)
-
--- generate test dataset
-local test_input, test_output =
-  build_input_output_dataset(test_samples, test_labels)
 
 local rnd1 = random(1234)
 local rnd2 = random(6543)
@@ -115,9 +81,6 @@ local test_data = {
   bunch_size = 512, -- forces a large bunch_size for validation
 }
 
-print("# Training size:   ", train_input:numPatterns())
-print("# Validation size: ", validation_input:numPatterns())
-print("# Test size:       ", test_input:numPatterns())
 print("# Generating MLP")
 
 -- auxiliary function which concatenates a prefix plus a number to generate
@@ -136,12 +99,12 @@ local function push_convolution(thenet, kernel, n, actf, pooling)
   thenet:
     -- kernel convolution
     push( ann.components.convolution{ kernel=kernel, n=n,
-                                      name=gname("conv-W"),
-                                      weights=gname("W") } ):
+                                      name=gname("conv-w"),
+                                      weights=gname("w") } ):
     -- convolution bias
     push( ann.components.convolution_bias{ n=n, ndims=#kernel,
-                                           name=gname("conv-B"),
-                                           weights=gname("B") } ):
+                                           name=gname("conv-b"),
+                                           weights=gname("b") } ):
     -- convolution activation function
     push( ann.components.actf[actf]{ name=gname("actf-") } ):
     -- max-pooling
@@ -170,10 +133,10 @@ local conv_out_size = thenet:precompute_output_size{ 28*28 }[1]
 -- first fully connected layer
 thenet:push( ann.components.hyperplane{ input=conv_out_size, output=hidden1,
                                         name=gname("hyp-"),
-                                        bias_name=gname("B"),
-                                        dot_product_name=gname("W"),
-                                        bias_weights=gname("B"),
-                                        dot_product_weights=gname("W") } ):
+                                        bias_name=gname("b"),
+                                        dot_product_name=gname("w"),
+                                        bias_weights=gname("b"),
+                                        dot_product_weights=gname("w") } ):
   -- activation function
   push( ann.components.actf[hidden1f]{ name=gname("actf-") } ):
   -- dropout to avoid overfitting
@@ -181,10 +144,10 @@ thenet:push( ann.components.hyperplane{ input=conv_out_size, output=hidden1,
   -- output layer
   push( ann.components.hyperplane{ input=hidden1, output= 10,
                                    name=gname("hyp-"),
-                                   bias_name=gname("B"),
-                                   dot_product_name=gname("W"),
-                                   bias_weights=gname("B"),
-                                   dot_product_weights=gname("W") } ):
+                                   bias_name=gname("b"),
+                                   dot_product_name=gname("w"),
+                                   bias_weights=gname("b"),
+                                   dot_product_weights=gname("w") } ):
   -- output activation function
   push( ann.components.actf.log_softmax{ name=gname("actf-") } )
 
@@ -205,12 +168,12 @@ trainer:build()
 -- and knows how to set all the options)
 trainer:set_option("weight_decay", weight_decay)
 -- The bias regularization is a bad thing...
-trainer:set_layerwise_option("B.*", "weight_decay", 0)
+trainer:set_layerwise_option("b.*", "weight_decay", 0)
 
 -- randomize the neural network weights (no biases) in the range
 -- [ inf / sqrt(fanin + fanout), sup / sqrt(fanin + fanout) ]
 trainer:randomize_weights{
-  name_match = "W.*",
+  name_match = "w.*",
   random     =  rnd1,
   inf        = -math.sqrt(6),
   sup        =  math.sqrt(6),
@@ -219,7 +182,7 @@ trainer:randomize_weights{
 }
 
 -- initializes all biases to zero
-for _,B in trainer:iterate_weights("B.") do B:zeros() end
+for _,b in trainer:iterate_weights("b.*") do b:zeros() end
 
 -- the stopping criterion is 400 epochs without improvement in validation loss
 local stopping_criterion = trainable.stopping_criteria.make_max_epochs_wo_imp_absolute(400)
@@ -253,8 +216,8 @@ end) do
 	   val_rel_error*100, val_rel_error*validation_input:numPatterns())
     printf("# TEST CLASS ERROR %.4f %%  %d\n",
 	   tst_rel_error*100, tst_rel_error*test_input:numPatterns())
-    -- save the input filters (W1 weight matrix)
-    local img = ann.connections.input_filters_image(trainer:weights("W1"),
+    -- save the input filters (w1 weight matrix)
+    local img = ann.connections.input_filters_image(trainer:weights("w1"),
                                                     {conv1[2], conv1[3]})
     ImageIO.write(img, string.format("filters-%04d.png", epoch))
   end
@@ -262,8 +225,8 @@ end) do
   printf("%s \t cpu: %.2f wall: %.2f :: norm2 w= %8.4f  b= %8.4f\n",
          pocket_alg:get_state_string(),
   	 cpu/epoch, wall/epoch,
-	 trainer:norm2(".*W.*"),
-	 trainer:norm2(".*B.*"))
+	 trainer:norm2(".*w.*"),
+	 trainer:norm2(".*b.*"))
   io.stdout:flush()
 end
 cronometro:stop()

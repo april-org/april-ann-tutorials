@@ -9,16 +9,8 @@ data_path=$tmp_path/mnist
 
 . $script_path/../configure.sh $tmp_path
 
-check_command ln
-
-$script_path/../MNIST-utils/execute.sh ||
+$script_path/../MNIST-utils/execute.sh 0 ||
 error "Unable to download and prepare MNIST data"
-
-ln -fs $data_path/$train_images &&
-ln -fs $data_path/$train_labels &&
-ln -fs $data_path/$test_images &&
-ln -fs $data_path/$test_labels ||
-error "Unable to link data and labels"
 
 april-ann train.lua ||
 error "Impossible to execute training script :("
