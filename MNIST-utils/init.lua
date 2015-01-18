@@ -29,9 +29,10 @@ local training_samples = matrix.fromFilename(datadir..train_filename)
 print("# Lodaing test data...")
 local test_samples     = matrix.fromFilename(datadir..test_filename)
 
--- load training and test labels
-local training_labels = matrix.fromTabFilename(datadir..train_labels_filename):scalar_add(1)
-local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename):scalar_add(1)
+-- load training and test labels, we add 1 to all matrix components because
+-- in Lua (and in APRIL-ANN) class indices start at 1 instead of 0
+local training_labels = matrix.fromTabFilename(datadir..train_labels_filename) + 1
+local test_labels     = matrix.fromTabFilename(datadir..test_labels_filename) + 1
 
 -- the output is an indexed dataset over a identity which allows to produce a
 -- local encoding
