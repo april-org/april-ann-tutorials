@@ -1,5 +1,8 @@
 gmon.out
 tmp
+filters*
+*txt
+*mat
 
 # Emacs backups #
 #################
