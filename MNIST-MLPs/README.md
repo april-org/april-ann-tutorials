@@ -19,7 +19,7 @@ toolkit for basic MNIST task. The following description is intended to describe
 the most important parts to new APRIL-ANN users.
 
 It is important to understand the concept of MLPs, you can visit the following
-link at (Wikipedia)[https://en.wikipedia.org/wiki/Multilayer_perceptron] to
+link at [Wikipedia](https://en.wikipedia.org/wiki/Multilayer_perceptron) to
 introduce yourself in the topic.
 
 ### Data loading
