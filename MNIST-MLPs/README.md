@@ -25,7 +25,7 @@ introduce yourself in the topic.
 ### Data loading
 
 Read the tutorial at
-(MNIST-utils)[https://github.com/pakozm/april-ann-tutorials/tree/master/MNIST-utils]
+[MNIST-utils](https://github.com/pakozm/april-ann-tutorials/tree/master/MNIST-utils)
 to understand how to perform loading of training/test data into APRIL-ANN.
 
 The MLP training script loads this data by requiring directory *MNIST-utils* as
