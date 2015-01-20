@@ -77,7 +77,7 @@ download()
     if [[ ! -e $data_path/$file ]]; then
         echo -e "${GREEN}Downaloading $file${NC}"
         url=$base_url/$file
-        wget $url -O $data_path/$file ||
+        wget --no-check-certificate $url -O $data_path/$file ||
         error "Unable to download from $url"
     else
         echo -e "${YELLOW}Skipping download of $file${NC}"
