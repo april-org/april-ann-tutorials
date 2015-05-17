@@ -19,8 +19,6 @@ mkdir -p $data_path
 
 check_command gunzip g++ ln
 
-install wget
-
 download $base_url $train_images_gz $data_path
 download $base_url $train_labels_gz $data_path
 download $base_url $test_images_gz $data_path
