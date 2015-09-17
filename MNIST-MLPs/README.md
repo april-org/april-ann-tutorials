@@ -140,9 +140,7 @@ globally to 0.0001 and layerwise 0.0 for biases.
 ```Lua
 -- learning parameters are weight-related, via optimizer (trainer has a wrapper
 -- and knows how to set all the options)
-trainer:set_option("weight_decay", 0.0001)
--- The bias regularization is a bad thing...
-trainer:set_layerwise_option("b.*", "weight_decay", 0)
+trainer:set_layerwise_option("w.*", "weight_decay", 0.0001)
 ```
 
 ### The pocket algorithm and training loop
